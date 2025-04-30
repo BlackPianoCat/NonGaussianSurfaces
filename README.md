@@ -23,8 +23,6 @@ seb.SAimage_fft_2(500,3,1,3,20,20,0.9,800.0,corr=True)
 
 # Results
 
-![Imgur](https://i.imgur.com/jrfH5Fn.png)
+![image](https://github.com/user-attachments/assets/be9a6f7b-90c5-4240-89bc-78a295d5c9bb)
 
-![Imgur](https://i.imgur.com/nKt1YX2.png)
-
-![Imgur](https://i.imgur.com/7IA6yya.png)
+![image](https://github.com/user-attachments/assets/a328b67c-366d-4d67-ab96-d95e5e2e6f12)
