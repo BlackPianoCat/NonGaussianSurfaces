@@ -1,0 +1,57 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.python-version
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Jupyter and IPython
+.ipynb_checkpoints/
+.profile
+.ipython/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*.bak
+*~
+
+# Logs
+*.log
+
+# dotenv
+.env
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Test coverage
+htmlcov/
+.coverage
+.cache/
+.pytest_cache/
+
+# Additional config files
+config_*.ini
+
+# Simulation Results
+tmp/
+*result*/
+*output*/
