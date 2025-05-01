@@ -99,7 +99,10 @@ plt.show()
 
 - Python translation by Max Pierini @ [EpiData.it](https://epidata.it)
 - Ported from original MATLAB toolbox by Dave (2021)
-- Extended and maintained by [your name here]
+- Matlab code from dr. Vasilis Costantoudis.
+- Extended and maintained by Sebastian Korsak.
+- Correction of non gaussian surfaces with copilot.
+
 
 # Results
 
