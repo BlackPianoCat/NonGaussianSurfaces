@@ -2,106 +2,108 @@
 
 **Author:** Sebastian Korsak
 
-# 🎲 Johnson Distribution Moment Fitter
+# 🌄 Gaussian Self-Affine Surface Generator
 
-A Python implementation of Johnson distribution fitting based on the first four moments: **mean**, **standard deviation**, **skewness**, and **kurtosis**.  
-This tool approximates the functionality of MATLAB's `pearsrnd()` and the **Johnson Curve Toolbox** by Dave (2014–2021).
+This Python module generates **2D Gaussian random surfaces** with spatial correlations, based on a prescribed **roughness exponent** and **correlation lengths**.  
+It implements a spectral method using **FFT-based synthesis** and supports anisotropic scaling.
 
-Ported and extended by Max Pierini and contributors.
+Adapted from the method described in:
+
+> Yang et al., CMES, vol.103, no.4, pp.251–279, 2014
 
 ---
 
 ## 🔧 Function
 
 ```python
-f_johnson_M(mu, sd, skew, kurt)
+SAimage_fft_2(N, rms, skewness, kurtosis, corlength_x, corlength_y, alpha, non_Gauss=False)
 ```
-
-Estimates the parameters of a **Johnson distribution** (SL, SU, SB, SN, ST) to match specified statistical moments.
 
 ---
 
 ## 📥 Parameters
 
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| `mu`      | float  | Desired **mean** of the distribution |
-| `sd`      | float  | Desired **standard deviation** |
-| `skew`    | float  | Desired **skewness** (3rd standardized moment) |
-| `kurt`    | float  | Desired **kurtosis** (4th standardized moment, not excess) |
+| Parameter      | Type    | Description |
+|----------------|---------|-------------|
+| `N`            | `int`   | Size of the generated surface (`NxN`) |
+| `rms`          | `float` | Target **root-mean-square roughness** |
+| `corlength_x`  | `float` | Correlation length along the **x-axis** |
+| `corlength_y`  | `float` | Correlation length along the **y-axis** |
+| `alpha`        | `float` | **Roughness exponent** (also known as Hurst exponent) |
+| `non_Gauss`    | `bool`  | Set to `False` to generate **Gaussian surface** only |
+| `skewness`, `kurtosis` | `float` | Ignored if `non_Gauss=False` |
 
 ---
 
-## 📤 Returns
+## 🧠 Mathematical Model
+The spatial autocorrelation function is modeled as:
+
+`R(tx, ty) = rms² · exp( - ( sqrt((tx/ξx)² + (ty/ξy)²) )^(2α) )`
+
+Where:
+- `ξx`, `ξy`: correlation lengths in x and y directions
+- `α`: roughness exponent (e.g., `α = 0.5` for Brownian motion)
+
+
+---
+
+## 📈 Output
+
+Returns a 2D NumPy array:
 
 ```python
-coef, dist_type, error_msg = f_johnson_M(mu, sd, skew, kurt)
+surface = SAimage_fft_2(..., non_Gauss=False)
 ```
 
-| Return        | Type    | Description |
-|---------------|---------|-------------|
-| `coef`        | tuple   | `(gamma, delta, xi, lambda)` — parameters of the Johnson distribution |
-| `dist_type`   | str     | Johnson type: `'SL'`, `'SU'`, `'SB'`, `'SN'`, `'ST'` |
-| `error_msg`   | str     | Explanation or warning, empty if successful |
+- Gaussian-distributed height values
+- RMS roughness equal to `rms`
+- Zero mean
+- Spatial correlations matching `ksix`, `ksiy`, and `alpha`
 
 ---
 
-## 📚 Johnson Distribution Types
-
-| Code | Type      | Description                                     |
-|------|-----------|-------------------------------------------------|
-| SL   | Lognormal | Positive-only, skewed                          |
-| SU   | Unbounded | Skewed, supports full ℝ                        |
-| SB   | Bounded   | Supports bounded intervals [0,1], fragile fit |
-| SN   | Normal    | Used when skew ≈ 0 and kurtosis ≈ 3           |
-| ST   | Two-piece normal | Backup for certain boundary cases     |
-
----
-
-## 🚀 Example
+## 🌍 Visualization Example
 
 ```python
-from f_johnson_M import f_johnson_M
-from scipy.stats import johnsonsu
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
-# Desired statistical properties
-mu = 0
-sigma = 1
-skew = 1.5
-kurt = 5
+z = SAimage_fft_2(N=256, rms=1.0, skewness=0, kurtosis=3,
+                  corlength_x=20, corlength_y=20, alpha=0.8, non_Gauss=False)
 
-# Estimate Johnson parameters
-params, dtype, msg = f_johnson_M(mu, sigma, skew, kurt)
-gamma, delta, xi, lam = params
-
-# Sample from the fitted distribution
-samples = johnsonsu.rvs(a=gamma, b=delta, loc=xi, scale=lam, size=10000)
-
-# Plot histogram
-plt.hist(samples, bins=100, density=True)
-plt.title(f'Johnson {dtype} Distribution')
+X, Y = np.meshgrid(np.arange(z.shape[0]), np.arange(z.shape[1]))
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, z, cmap='viridis', edgecolor='none')
+plt.title('Gaussian Self-Affine Surface')
 plt.show()
 ```
 
 ---
 
-## ⚠️ Notes & Limitations
+## ⚠️ Notes
 
-- The tool **matches target moments** using moment-based inference and numerical root-finding.
-- **SB distributions** may fail to converge for some moment combinations — fallback to `'ST'` is automatic.
-- Results are **approximate** due to sampling variability and numerical limitations.
-- Equivalent to MATLAB’s `pearsrnd()` but only covers **Johnson system**, not all Pearson types.
+- This is a **purely Gaussian** surface generator (zero skewness, kurtosis = 3).
+- If you need **non-Gaussian statistics**, set `non_Gauss=True` and provide `skewness` and `kurtosis`. See the full version with rank-order mapping for that.
+- Spatial correlation is implemented via FFT filtering based on the **Wiener-Khinchin theorem**.
+
+---
+
+## 📂 License
+
+MIT License
 
 ---
 
 ## 📜 References
 
-- Dave (2021). *Johnson Curve Toolbox*. [MATLAB Central File Exchange](https://www.mathworks.com/matlabcentral/fileexchange/46123-johnson-curve-toolbox)
-- Johnson, N.L. (1949). *Systems of frequency curves generated by methods of translation*.
+- Yang, F., et al. *Statistical generation of 3D rough surfaces with arbitrary correlation*, CMES, vol. 103, no. 4, 2014.
+- Persson, B.N.J. *Theory of rubber friction and contact mechanics*.
 
 ---
+```
 
+Let me know if you want a version for **non-Gaussian surfaces** or to auto-generate `.npy` / `.tiff` output from the surface.
 ## 📂 License
 
 MIT License. See `LICENSE` file.
