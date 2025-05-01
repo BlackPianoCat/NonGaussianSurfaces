@@ -1,4 +1,4 @@
-# Non-Gaussian Surface Simulations
+j is# Non-Gaussian Surface Simulations
 
 **Author:** Sebastian Korsak
 
@@ -87,11 +87,6 @@ plt.show()
 - If you need **non-Gaussian statistics**, set `non_Gauss=True` and provide `skewness` and `kurtosis`. See the full version with rank-order mapping for that.
 - Spatial correlation is implemented via FFT filtering based on the **Wiener-Khinchin theorem**.
 
----
-
-## 📂 License
-
-MIT License
 
 ---
 
