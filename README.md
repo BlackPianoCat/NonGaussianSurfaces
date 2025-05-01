@@ -1,4 +1,4 @@
-j is# Non-Gaussian Surface Simulations
+# Non-Gaussian Surface Simulations
 
 **Author:** Sebastian Korsak
 
