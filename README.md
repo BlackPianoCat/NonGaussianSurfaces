@@ -95,14 +95,6 @@ plt.show()
 - Yang, F., et al. *Statistical generation of 3D rough surfaces with arbitrary correlation*, CMES, vol. 103, no. 4, 2014.
 - Persson, B.N.J. *Theory of rubber friction and contact mechanics*.
 
----
-
-
-Let me know if you want a version for **non-Gaussian surfaces** or to auto-generate `.npy` / `.tiff` output from the surface.
-## 📂 License
-
-MIT License. See `LICENSE` file.
-
 ## 👥 Credits
 
 - Python translation by Max Pierini @ [EpiData.it](https://epidata.it)
