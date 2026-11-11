@@ -42,6 +42,6 @@ def test_publish_workflow_order():
     wf = ROOT / 'workflows' / 'publish.yml'
     wf = wf if wf.exists() else ROOT / '.github' / 'workflows' / 'publish.yml'
     text = wf.read_text()
-    assert re.search(r'docs:\s*\n\s*needs: pypi', text)      # docs only after the PyPI upload
+    assert re.search(r'docs:\s*\n\s*needs: \[test, pypi\]', text)   # docs run after the PyPI step
     assert re.search(r'pypi:\s*\n\s*needs: test', text)      # upload only after tests pass
     assert 'mkdocs gh-deploy' in text and 'mkdocs/config.yml' in text

@@ -1,5 +1,6 @@
 name: publish
-# Runs when a GitHub release is published: test -> PyPI -> docs on GitHub Pages
+# Runs when a GitHub release is published (or by hand): test -> PyPI -> docs on GitHub Pages
+# Docs are published whenever the tests pass, even if the PyPI upload fails.
 # (docs: https://blackpianocat.github.io/NonGaussianSurfaces/, linked from the PyPI page)
 on:
   release:
@@ -8,35 +9,36 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
       - run: pip install -e ".[dev]"
       - run: python src/run_tests.py
 
   pypi:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: pypi
     permissions:
       id-token: write            # PyPI trusted publishing (no API token needed)
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
       - run: pip install build twine && python -m build && twine check dist/*
       - uses: pypa/gh-action-pypi-publish@release/v1
 
   docs:
-    needs: pypi                  # build and publish the docs only after the PyPI upload succeeded
-    runs-on: ubuntu-latest
+    needs: [test, pypi]          # runs after the PyPI step ...
+    if: ${{ !cancelled() && needs.test.result == 'success' }}   # ... but is not blocked if the upload fails
+    runs-on: ubuntu-24.04
     permissions:
       contents: write            # pushes the gh-pages branch
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
       - run: pip install -e ".[docs]"
       - run: mkdocs gh-deploy --force -f mkdocs/config.yml

@@ -4,7 +4,7 @@ Python library that generates rough 2D surfaces with a prescribed **height distr
 
 ## Requirements
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 - Required: `numpy`, `scipy`, `matplotlib`
 - Optional: `plotly` (interactive plots)
 - Docs and tests: `mkdocs`, `mkdocs-material`, `mkdocstrings[python]`, `pytest`
