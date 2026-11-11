@@ -12,6 +12,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import LightSource
+from matplotlib.patches import PathPatch
+from matplotlib.font_manager import FontProperties
+from matplotlib.textpath import TextPath
+from matplotlib.transforms import Affine2D
 from .johnson import johnson_boundaries
 from .surface import hhcf_1d, abbott_curve, radial_psd, report_text, pdf_and_qq, log_power_2d
 
@@ -221,6 +225,32 @@ def plot_logo(res, size=3):
     fig = plt.figure(figsize=(size, size))
     ax = fig.add_axes([0, 0, 1, 1])
     ax.imshow(_shade(res.z, 'inferno', exag=3), origin='lower'); ax.axis('off')
+    return fig
+
+
+@styled_static
+def plot_banner(icon, texture, text='NonGaussian-Surfaces', height=2.2):
+    """Logo banner: small surface icon + monospace wordmark filled with a non-Gaussian heightmap.
+
+    `icon` and `texture` are SurfaceResults (texture should be large, e.g. N=512).
+    """
+    fp = FontProperties(family='DejaVu Sans Mono', weight='bold')
+    tp = TextPath((0, 0), text, size=1, prop=fp)
+    x0, y0, x1, y1 = tp.get_extents().extents
+    w = (x1 - x0) / (y1 - y0) * height * 0.62            # text width for a 0.62*height tall word
+    fig = plt.figure(figsize=(height + w + 0.5, height), facecolor='white')
+    ax_i = fig.add_axes([0.02 * height / fig.get_figwidth(), 0.06, height * 0.88 / fig.get_figwidth(), 0.88])
+    ax_i.imshow(_shade(icon.z, 'inferno', exag=3), origin='lower'); ax_i.axis('off')
+
+    ax = fig.add_axes([(height + 0.12) / fig.get_figwidth(), 0.2, w / fig.get_figwidth(), 0.6])
+    ax.set_xlim(x0, x1); ax.set_ylim(y0, y1); ax.axis('off')
+    patch = PathPatch(tp, facecolor='none', edgecolor='none'); ax.add_patch(patch)
+    z = texture.z                                         # crop the texture to the word's aspect ratio
+    nx = z.shape[1]; ny = max(8, int(nx * (y1 - y0) / (x1 - x0)))
+    img = ax.imshow(_shade(z[:ny], 'inferno', z.min(), np.percentile(z, 99.5), 3) ** 0.8,
+                    extent=[x0, x1, y0, y1], origin='lower', aspect='auto', interpolation='bicubic', zorder=2)
+    img.set_clip_path(patch)
+    ax.add_patch(PathPatch(tp, facecolor='none', edgecolor='#2b0a3d', lw=0.5, zorder=3))
     return fig
 
 

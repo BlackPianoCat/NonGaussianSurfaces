@@ -30,6 +30,11 @@ def test_compare_logo_and_explorer(res):
     assert len(ex.frames) == 3
 
 
+def test_banner(res):
+    big = generate_surface(N=128, seed=1)
+    assert plots.plot_banner(res, big) is not None
+
+
 def test_feasibility_accepts_points():
     assert plots.plot_feasibility([(1, 4, 'x'), (0, 2.2)]) is not None
 

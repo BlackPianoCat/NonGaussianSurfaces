@@ -1,6 +1,4 @@
-# nongaussian-surfaces
-
-![logo](assets/img/logo.png){ width=120 align=right }
+![NonGaussian-Surfaces](assets/img/logo_banner.png){ width=640 }
 
 Generate rough 2D surfaces, like the height maps measured with an AFM or a profilometer, with a **prescribed height distribution** and **spatial structure**. Real surfaces are rarely Gaussian: a corroded plate has a few deep pits that a bell curve would never produce, so you ask for the numbers you actually measure.
 

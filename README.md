@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/logo.png" width="130" alt="logo">
+  <img src="https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/logo_banner.png" width="640" alt="NonGaussian-Surfaces">
 </p>
-
-# nongaussian-surfaces
 
 **Generate rough 2D surfaces with a prescribed height distribution *and* spatial correlation.**
 
@@ -140,6 +138,7 @@ src/
 ├── examples/make_readme_figures.py
 ├── tests/               # pytest suite
 └── run_tests.py         # run the tests from a clone
+jupies/                  # example Jupyter notebook (quickstart.ipynb)
 mkdocs/                  # documentation site: Home, Guide, API reference (+ figures)
 workflows/               # CI: tests + PyPI/docs publishing (move to .github/workflows/)
 ```

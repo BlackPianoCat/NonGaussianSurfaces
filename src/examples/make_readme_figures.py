@@ -27,6 +27,9 @@ def main():
     plots.save(fig, IMG / 'feasibility.png')
     plots.save(plots.plot_logo(generate_surface(skewness=1.2, kurtosis=5, **{**BASE, 'N': 160, 'seed': 3})),
                IMG / 'logo.png', dpi=100)
+    icon = generate_surface(skewness=1.2, kurtosis=5, **{**BASE, 'N': 160, 'seed': 3})
+    texture = generate_surface(skewness=2, kurtosis=9, **{**BASE, 'N': 1024, 'seed': 11, 'corlength_x': 14, 'corlength_y': 14})
+    plots.save(plots.plot_banner(icon, texture), IMG / 'logo_banner.png', dpi=150)
 
     # skewness: negative (pits) vs positive (peaks); kurtosis: flat vs spiky; anisotropy
     neg, pos = (generate_surface(skewness=s, kurtosis=4, **BASE) for s in (-1, 1))
