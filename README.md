@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/logo_banner.png" width="640" alt="NonGaussian-Surfaces">
+  <img src="https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/logo_banner.png" width="100%" alt="NonGaussian-Surfaces">
 </p>
 
 **Generate rough 2D surfaces with a prescribed height distribution *and* spatial correlation.**
@@ -16,7 +16,7 @@ Real rough surfaces (corroded metal, fracture faces, AFM scans) are rarely Gauss
 
 ![Gaussian vs non-Gaussian surface](https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/surfaces_3d.png)
 
-Documentation with example figures, interactive plots and every function: `mkdocs/` (see [Development](#development)), published on GitHub Pages once released.
+**Documentation:** <https://blackpianocat.github.io/NonGaussianSurfaces/> (built from `mkdocs/` and published automatically with every PyPI release).
 
 ---
 
@@ -33,7 +33,7 @@ From a clone (development mode):
 pip install -e ".[dev]"
 ```
 
-The import name is `nongauss`.
+Install name: `nongaussian-surfaces`; import name: `nongauss`.
 
 ## Quick start
 
@@ -42,21 +42,19 @@ from nongauss import generate_surface, print_report, plots
 
 res = generate_surface(N=256, rms=3, skewness=1, kurtosis=4,
                        corlength_x=12, corlength_y=12, alpha=0.8, seed=7)
+print_report(res)                                    # requested vs. achieved statistics
+res.z                                                # (256, 256) heights, min = 0
 
-res.z          # (256, 256) array of heights, min = 0
-res.z_gauss    # the Gaussian scaffold it was built from
-res.j_type     # fitted Johnson family: 'SN' | 'SL' | 'SB' | 'SU' | 'ST'
-print_report(res)                       # requested vs. achieved statistics
-
-plots.plot_surfaces(res)                            # static (matplotlib)
-plots.plot_surfaces(res, interactive=True).show()   # interactive (Plotly)
+fig = plots.plot_heightmap_mask(res)                 # matplotlib figure
+plots.save(fig, "surface.png")
+plots.plot_heightmap_mask(res, interactive=True).show()   # Plotly version
 ```
 
 Command line:
 
 ```bash
-nongauss --skew 1 --kurt 4 --alpha 0.7 --out out/                 # PNG figures
-nongauss --skew 1 --kurt 4 --alpha 0.7 --out out/ --interactive   # HTML figures
+nongauss --skew 1 --kurt 4 --alpha 0.8 --out out/                 # PNG figures
+nongauss --skew 1 --kurt 4 --alpha 0.8 --out out/ --interactive   # HTML figures
 ```
 
 ## Plots: static or interactive, your choice
@@ -88,7 +86,7 @@ Interactive demos (open in a browser): [3D surfaces](https://htmlpreview.github.
 ### Statistics without plots
 
 ```python
-from nongauss import moments, hhcf_1d, abbott_curve, radial_psd
+from nongauss import moments, hhcf_1d, abbott_curve, radial_psd, report_text
 
 mean, std, skew, kurt = moments(res.z)
 g = hhcf_1d(res.z, axis=1)        # height-height correlation along x

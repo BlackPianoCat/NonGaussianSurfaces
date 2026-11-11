@@ -1,4 +1,4 @@
-![NonGaussian-Surfaces](assets/img/logo_banner.png){ width=640 }
+![NonGaussian-Surfaces](assets/img/logo_banner.png){ style="width:100%" }
 
 Python library that generates rough 2D surfaces with a prescribed **height distribution** (rms, skewness, kurtosis) and **spatial structure** (correlation lengths, roughness exponent), plus tools to inspect them with static (matplotlib) or interactive (Plotly) plots.
 
@@ -18,7 +18,7 @@ pip install nongaussian-surfaces                  # core + static plots
 pip install "nongaussian-surfaces[interactive]"   # + Plotly
 ```
 
-The distribution name is `nongaussian-surfaces`; the import name is `nongauss`.
+Install name: `nongaussian-surfaces`; import name: `nongauss`.
 
 ### From source
 

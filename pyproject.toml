@@ -28,7 +28,9 @@ dev = ["pytest", "plotly", "build", "twine", "mkdocs<2", "mkdocs-material", "mkd
 nongauss = "nongauss.cli:main"
 
 [project.urls]
+Documentation = "https://blackpianocat.github.io/NonGaussianSurfaces/"
 Homepage = "https://github.com/BlackPianoCat/NonGaussianSurfaces"
+Source = "https://github.com/BlackPianoCat/NonGaussianSurfaces"
 Issues = "https://github.com/BlackPianoCat/NonGaussianSurfaces/issues"
 
 [tool.setuptools.packages.find]

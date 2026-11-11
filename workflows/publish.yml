@@ -1,0 +1,42 @@
+name: publish
+# Runs when a GitHub release is published: test -> PyPI -> docs on GitHub Pages
+# (docs: https://blackpianocat.github.io/NonGaussianSurfaces/, linked from the PyPI page)
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e ".[dev]"
+      - run: python src/run_tests.py
+
+  pypi:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write            # PyPI trusted publishing (no API token needed)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install build twine && python -m build && twine check dist/*
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  docs:
+    needs: pypi                  # build and publish the docs only after the PyPI upload succeeded
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write            # pushes the gh-pages branch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e ".[docs]"
+      - run: mkdocs gh-deploy --force -f mkdocs/config.yml

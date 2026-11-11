@@ -11,7 +11,7 @@ Generation has three steps:
 ## Generating surfaces
 
 ```python
-from nongauss import generate_surface
+from nongauss import generate_surface, print_report, plots
 
 res = generate_surface(N=256, rms=3, skewness=1, kurtosis=4,
                        corlength_x=12, corlength_y=12, alpha=0.8, seed=7)
@@ -74,8 +74,6 @@ Each `plots.plot_*` function takes a `SurfaceResult` and returns a figure. Pass 
 | `plot_compare(res_a, res_b, labels)` | two heightmaps on a shared color scale |
 
 ```python
-from nongauss import plots
-
 fig = plots.plot_distribution(res)                      # matplotlib Figure
 fig = plots.plot_distribution(res, interactive=True)    # plotly Figure (needs plotly)
 fig = plots.plot(res, "spectrum")                       # by name, see plots.KINDS

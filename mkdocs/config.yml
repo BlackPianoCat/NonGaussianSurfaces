@@ -1,5 +1,6 @@
 site_name: nongaussian-surfaces
 site_description: Gaussian and non-Gaussian self-affine rough surfaces with prescribed height statistics
+site_url: https://blackpianocat.github.io/NonGaussianSurfaces/
 repo_url: https://github.com/BlackPianoCat/NonGaussianSurfaces
 docs_dir: docs
 site_dir: ../site
