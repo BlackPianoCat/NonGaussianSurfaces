@@ -1,42 +1,78 @@
 ![NonGaussian-Surfaces](assets/img/logo_banner.png){ width=640 }
 
-Generate rough 2D surfaces, like the height maps measured with an AFM or a profilometer, with a **prescribed height distribution** and **spatial structure**. Real surfaces are rarely Gaussian: a corroded plate has a few deep pits that a bell curve would never produce, so you ask for the numbers you actually measure.
+Python library that generates rough 2D surfaces with a prescribed **height distribution** (rms, skewness, kurtosis) and **spatial structure** (correlation lengths, roughness exponent), plus tools to inspect them with static (matplotlib) or interactive (Plotly) plots.
 
-| Quantity | Meaning |
-|---|---|
-| **rms** | typical distance of heights from their mean |
-| **skewness** | lopsidedness: positive = sharp peaks, negative = deep pits |
-| **kurtosis** | tailedness: 3 is Gaussian, larger = rare tall spikes |
-| **correlation lengths** \(\xi_x,\xi_y\) | distance beyond which two points are practically independent |
-| **roughness exponent** \(\alpha\) | jaggedness at small scales (\(\alpha\to0\) jagged, \(\alpha\to1\) smooth) |
+## Requirements
 
-![surfaces](assets/img/surfaces_3d.png)
+- Python 3.9 or newer
+- Required: `numpy`, `scipy`, `matplotlib`
+- Optional: `plotly` (interactive plots)
+- Docs and tests: `mkdocs`, `mkdocs-material`, `mkdocstrings[python]`, `pytest`
 
-## Install
+## Installation
+
+### From PyPI
 
 ```bash
 pip install nongaussian-surfaces                  # core + static plots
-pip install "nongaussian-surfaces[interactive]"   # + interactive Plotly figures
+pip install "nongaussian-surfaces[interactive]"   # + Plotly
 ```
 
-## Quick start
+The distribution name is `nongaussian-surfaces`; the import name is `nongauss`.
+
+### From source
+
+```bash
+git clone https://github.com/BlackPianoCat/NonGaussianSurfaces
+cd NonGaussianSurfaces
+pip install -e ".[dev]"        # editable install: package, plotly, pytest, mkdocs
+```
+
+Extras defined in `pyproject.toml`:
+
+| Extra | Adds |
+|---|---|
+| `interactive` | `plotly` |
+| `docs` | `mkdocs`, `mkdocs-material`, `mkdocstrings[python]` |
+| `dev` | everything above plus `pytest`, `build`, `twine` |
+
+### Virtual environment (recommended)
+
+```bash
+python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install "nongaussian-surfaces[interactive]"
+```
+
+### Verify
+
+```bash
+python -c "import nongauss; print(nongauss.__all__[:3])"
+nongauss --help                          # command-line tool installed
+python src/run_tests.py                  # from a source checkout: runs the test suite
+```
+
+In headless environments (servers, CI) use a non-interactive matplotlib backend: `export MPLBACKEND=Agg`.
+
+## First run
 
 ```python
 from nongauss import generate_surface, print_report, plots
 
 res = generate_surface(N=256, rms=3, skewness=1, kurtosis=4,
                        corlength_x=12, corlength_y=12, alpha=0.8, seed=7)
-print_report(res)                                   # requested vs. achieved statistics
-
-res.z                                               # (256, 256) heights, min = 0
-plots.plot_heightmap_mask(res)                      # static (matplotlib)
-plots.plot_heightmap_mask(res, interactive=True)    # interactive (Plotly)
+print_report(res)                                    # requested vs. achieved statistics
+fig = plots.plot_heightmap_mask(res)                 # matplotlib figure
+plots.save(fig, "surface.png")
 ```
 
-![heightmap](assets/img/heightmap_mask.png)
+or from the shell:
 
-Go to the [Guide](usage.md) for every plot and how the method works, or the [API reference](api.md).
+```bash
+nongauss --skew 1 --kurt 4 --alpha 0.8 --out out/
+```
+
+Next: [Guide](usage.md) for every function and option, [API reference](api.md) for signatures.
 
 ## Credits
 
-Algorithm by Dr. Vasilis Constantoudis, after Yang et al., *CMES* 103(4), 251-279 (2014). Johnson fitting ported from the MATLAB *Johnson Curve Toolbox* by Dave (2021), Python translation by Max Pierini ([EpiData.it](https://epidata.it)). Package, extensions and maintenance by Sebastian Korsak, with Claude. Apache 2.0 license.
+Algorithm by Dr. Vasilis Constantoudis after Yang et al., *CMES* 103(4), 251-279 (2014). Johnson fitting ported from the MATLAB *Johnson Curve Toolbox* by Dave (2021), Python translation by Max Pierini ([EpiData.it](https://epidata.it)). Package, extensions and maintenance by Sebastian Korsak, with Claude. Apache 2.0 license.

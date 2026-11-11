@@ -1,0 +1,15 @@
+/* Inferno-derived palette matching the surface logo: dark purple + orange accent, light background */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color:        #3b0f70;   /* dark purple */
+  --md-primary-fg-color--light: #6a2c91;
+  --md-primary-fg-color--dark:  #1f0a3d;
+  --md-primary-bg-color:        #ffffff;
+  --md-accent-fg-color:         #e8590c;   /* inferno orange */
+  --md-typeset-a-color:         #6a2c91;
+}
+.md-header, .md-tabs { background: linear-gradient(90deg, #1f0a3d 0%, #3b0f70 55%, #7a2a86 100%); }
+.md-typeset h1, .md-typeset h2 { color: #3b0f70; }
+.md-typeset a:hover { color: #e8590c; }
+.md-typeset table:not([class]) th { background: #f3ecf8; color: #3b0f70; }
+.md-typeset code { background: #f6f1fa; }

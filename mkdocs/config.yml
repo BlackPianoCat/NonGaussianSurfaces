@@ -10,8 +10,8 @@ theme:
   favicon: assets/img/logo.png
   palette:
     scheme: default            # light mode
-    primary: deep orange
-    accent: indigo
+    primary: custom
+    accent: custom
   features: [navigation.sections, navigation.top, content.code.copy]
 
 markdown_extensions:
@@ -22,6 +22,8 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.arithmatex:
       generic: true
+extra_css:
+  - assets/extra.css
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
