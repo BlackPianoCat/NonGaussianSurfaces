@@ -13,14 +13,19 @@ from . import plots
 from .surface import generate_surface, print_report
 
 
-def parse():
+def build_parser():
+    """Argument parser of the `nongauss` command."""
     p = argparse.ArgumentParser(prog='nongauss', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     for name, default in dict(N=256, rms=3.0, skew=1.0, kurt=3.0, clx=10.0, cly=10.0, alpha=0.9).items():
         p.add_argument(f'--{name}', type=type(default), default=default)
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--out', type=Path, default=None, help='save figures here instead of showing them')
     p.add_argument('--interactive', action='store_true', help='interactive Plotly figures (HTML) instead of PNG; needs plotly')
-    return p.parse_args()
+    return p
+
+
+def parse():
+    return build_parser().parse_args()
 
 
 def main():
