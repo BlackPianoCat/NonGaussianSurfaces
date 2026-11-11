@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,13 +7,13 @@ name = "nongaussian-surfaces"
 version = "0.2.1"
 description = "Generate Gaussian and non-Gaussian self-affine rough surfaces with prescribed skewness, kurtosis and correlation."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "Sebastian Korsak" }]
 requires-python = ">=3.10"
 keywords = ["rough surfaces", "non-Gaussian", "Johnson distribution", "self-affine", "FFT", "tribology"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
 ]
