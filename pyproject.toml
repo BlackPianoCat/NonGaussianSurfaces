@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nongaussian-surfaces"
+version = "0.2.0"
+description = "Generate Gaussian and non-Gaussian self-affine rough surfaces with prescribed skewness, kurtosis and correlation."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Sebastian Korsak" }]
+requires-python = ">=3.9"
+keywords = ["rough surfaces", "non-Gaussian", "Johnson distribution", "self-affine", "FFT", "tribology"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = ["numpy", "scipy", "matplotlib"]
+
+[project.optional-dependencies]
+interactive = ["plotly"]
+docs = ["mkdocs<2", "mkdocs-material", "mkdocstrings[python]"]
+dev = ["pytest", "plotly", "build", "twine", "mkdocs<2", "mkdocs-material", "mkdocstrings[python]"]
+
+[project.scripts]
+nongauss = "nongauss.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/BlackPianoCat/NonGaussianSurfaces"
+Issues = "https://github.com/BlackPianoCat/NonGaussianSurfaces/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["nongauss*"]
+
+[tool.setuptools.package-data]
+nongauss = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]

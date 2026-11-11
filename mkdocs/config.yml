@@ -1,0 +1,44 @@
+site_name: nongaussian-surfaces
+site_description: Gaussian and non-Gaussian self-affine rough surfaces with prescribed height statistics
+repo_url: https://github.com/BlackPianoCat/NonGaussianSurfaces
+docs_dir: docs
+site_dir: ../site
+
+theme:
+  name: material
+  logo: assets/img/logo.png
+  favicon: assets/img/logo.png
+  palette:
+    scheme: default            # light mode
+    primary: deep orange
+    accent: indigo
+  features: [navigation.sections, navigation.top, content.code.copy]
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [../src]
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_source: false
+            members_order: source
+            heading_level: 3
+
+nav:
+  - Home: index.md
+  - Guide: usage.md
+  - API reference: api.md

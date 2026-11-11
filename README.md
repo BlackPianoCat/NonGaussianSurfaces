@@ -1,214 +1,173 @@
-# Non-Gaussian Surface Simulations
+<p align="center">
+  <img src="https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/logo.png" width="130" alt="logo">
+</p>
 
-**Author:** Sebastian Korsak
+# nongaussian-surfaces
 
-# 🌄 Gaussian & Non-Gaussian Self-Affine Surface Generator
+**Generate rough 2D surfaces with a prescribed height distribution *and* spatial correlation.**
 
-This Python module generates **2D random surfaces** — rough, textured height maps like the ones you'd measure with an AFM, a profilometer, or see on a fracture or corrosion surface — with a prescribed **spatial correlation** (how "wiggly" the surface is and over what length scale) and a prescribed **height distribution** (how the heights themselves are spread out: symmetric or lopsided, gently rounded or spiky).
+Real rough surfaces (corroded metal, fracture faces, AFM scans) are rarely Gaussian: a corroded plate has a few deep pits that a bell curve would never produce. This library lets you ask for exactly the numbers a surface scientist measures:
 
-It implements a spectral (FFT-based) synthesis method for the spatial part, and the **Johnson system of distributions** for the statistical part, following:
+| Quantity | Meaning |
+|---|---|
+| **rms** | root-mean-square roughness: typical distance of heights from their mean |
+| **skewness** | lopsidedness: positive = sharp peaks over a flat floor, negative = deep pits |
+| **kurtosis** | tailedness: 3 is Gaussian; larger = rare extreme spikes, smaller = heights stay in a narrow range |
+| **correlation length** ξx, ξy | distance beyond which two points on the surface are practically independent |
+| **roughness exponent** α | how jagged the surface looks at small scales (α→0 jagged, α→1 smooth) |
 
-> Yang et al., *CMES*, vol. 103, no. 4, pp. 251–279, 2014
+![Gaussian vs non-Gaussian surface](https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/surfaces_3d.png)
 
----
-
-## 💭 What are we actually simulating, and why?
-
-Real rough surfaces are almost never perfectly Gaussian. Think of a corroded metal plate: most of it sits close to some average height, but a few deep pits go much further down than a Gaussian bell curve would predict — that's a *skewed*, *heavy-tailed* surface, not a symmetric bumpy one. A machined surface, by contrast, might have its peaks gently truncated and its valleys smoothed — a different, *bounded* shape.
-
-To simulate that faithfully, this module asks you for exactly the four numbers a surface scientist usually measures or specifies:
-
-- **mean** — the average height,
-- **rms (root-mean-square roughness)** — how far heights typically wander from the mean,
-- **skewness** — whether the surface is lopsided (tall spiky peaks vs. deep narrow valleys, or the reverse),
-- **kurtosis** — how "spiky vs. flat" the height distribution is (occasional extreme excursions vs. everything hovering near the same range),
-
-and combines them with a **correlation length** and a **roughness (Hurst) exponent** that describe how far apart two points on the surface need to be before their heights stop "knowing about" each other, and how rough the surface looks at each scale in between. The goal is a surface that looks and behaves statistically like the real thing it's meant to stand in for — not just "random bumps," but bumps with the right personality.
+Documentation with example figures, interactive plots and every function: `mkdocs/` (see [Development](#development)), published on GitHub Pages once released.
 
 ---
 
-## 🧠 The Math, and the Intuition Behind It
+## Installation
 
-### 1. Spatial correlation: the Gaussian scaffold
-
-We first build a **Gaussian** random surface with the right spatial structure — this is the "scaffold" that the real, non-Gaussian heights will later be poured into.
-
-The spatial autocorrelation function is modeled as a stretched exponential:
-
-```
-R(tx, ty) = rms² · exp( − ( sqrt((tx/ξx)² + (ty/ξy)²) )^(2α) )
+```bash
+pip install nongaussian-surfaces                  # core + static plots
+pip install "nongaussian-surfaces[interactive]"   # + interactive Plotly figures
 ```
 
-- `ξx`, `ξy` — correlation lengths along x and y. Beyond this distance, two points on the surface are essentially statistically independent.
-- `α` — the roughness (Hurst) exponent. Small `α` (→0) gives a jagged, fractal-like surface; `α = 0.5` corresponds to Brownian-motion-like roughness; `α → 1` gives smoother, more rounded undulations.
+From a clone (development mode):
 
-By the **Wiener–Khinchin theorem**, the power spectrum of the surface is just the Fourier transform of `R`. So the recipe is:
+```bash
+pip install -e ".[dev]"
+```
 
-1. Build `R(tx, ty)` on a grid, take its 2D FFT to get the power spectrum `|FR|`.
-2. Generate white noise, take *its* FFT.
-3. Multiply the noise spectrum by `sqrt(|FR|)` — this "colors" the noise with the correlation structure we want.
-4. Inverse FFT back to real space, and rescale to the requested `rms`.
+The import name is `nongauss`.
 
-The result, `z_gs`, is a **Gaussian** surface (skewness 0, kurtosis 3) with exactly the correlation lengths and roughness exponent you asked for. If that's all you need, this is the whole story — see `non_Gauss=False`.
-
-### 2. Shaping the marginal distribution: the Johnson system
-
-Gaussian heights are the easy case. But if you want skewness ≠ 0 or kurtosis ≠ 3, there is no single closed-form distribution that lets you dial in mean, rms, skewness, and kurtosis independently — you need a *family* of distributions flexible enough to cover the whole feasible (skewness, kurtosis) plane.
-
-That's what the **Johnson system** does. It says: take a standard normal variable `Z`, and pass it through one of four transformations to get a variable `Y` with the moments you want:
-
-| Type | Name | Transform `Y = ...` | Shape |
-|------|------|----------------------|-------|
-| `SN` | Normal | `(Z − γ)/δ` | plain Gaussian (skew=0, kurt=3) |
-| `SL` | Lognormal | `ξ + λ·exp((Z − γ)/δ)` | one-sided, unbounded on one side |
-| `SB` | Bounded | `ξ + λ / (1 + exp(−(Z − γ)/δ))` | bounded above **and** below |
-| `SU` | Unbounded | `ξ + λ·sinh((Z − γ)/δ)` | unbounded both sides, heavy tails |
-
-plus a degenerate boundary case `ST`, a two-point (Bernoulli-like) distribution that shows up exactly on the line `kurtosis = 1 + skewness²`, where no continuous distribution can match the requested moments.
-
-**Given your (mean, rms, skewness, kurtosis), which of these five you get is not your choice** — it's determined entirely by where that (skewness, kurtosis) point falls relative to the Johnson system's boundary curves. A request for `(skewness=1, kurtosis=3)`, for instance, lands you in **SB** territory, not SU. The module fits the right `(γ, δ, ξ, λ)` parameters for whichever family applies, and samples from *that* family — this dispatch is the key correctness fix described below.
-
-### 3. Marrying the two: rank-order mapping
-
-We now have two independent things: a Gaussian field `z_gs` with the right *spatial correlation*, and an independent noise sample `z_ngn` with the right *marginal distribution* (mean/rms/skew/kurtosis) but no spatial structure at all.
-
-The trick — a **rank-order (copula-style) mapping** — combines them for free: sort both arrays, and reassign values so that whichever pixel had the *k*-th smallest value in `z_gs` now gets the *k*-th smallest value of `z_ngn`. This preserves the *spatial pattern* of the Gaussian field (where the hills and valleys are) while giving every pixel a height drawn from the exact target distribution. The final surface is then shifted so its minimum height is zero, matching how physical height maps (e.g. AFM scans) are usually reported.
-
----
-
-## 🔧 Function
+## Quick start
 
 ```python
-SAimage_fft_2(N=500, rms=3, skewness=1, kurtosis=3, corlength_x=10, corlength_y=10,
-              alpha=0.9, threshold=None, non_Gauss=True, corr=True, invert=False,
-              seed=None, show=True, clip_percentiles=None, plot_style='rich')
+from nongauss import generate_surface, print_report, plots
+
+res = generate_surface(N=256, rms=3, skewness=1, kurtosis=4,
+                       corlength_x=12, corlength_y=12, alpha=0.8, seed=7)
+
+res.z          # (256, 256) array of heights, min = 0
+res.z_gauss    # the Gaussian scaffold it was built from
+res.j_type     # fitted Johnson family: 'SN' | 'SL' | 'SB' | 'SU' | 'ST'
+print_report(res)                       # requested vs. achieved statistics
+
+plots.plot_surfaces(res)                            # static (matplotlib)
+plots.plot_surfaces(res, interactive=True).show()   # interactive (Plotly)
 ```
 
----
+Command line:
 
-## 📥 Parameters
+```bash
+nongauss --skew 1 --kurt 4 --alpha 0.7 --out out/                 # PNG figures
+nongauss --skew 1 --kurt 4 --alpha 0.7 --out out/ --interactive   # HTML figures
+```
 
-| Parameter          | Type            | Description |
-|--------------------|-----------------|-------------|
-| `N`                | `int`           | Size of the generated surface (`N x N`) |
-| `rms`              | `float`         | Target **root-mean-square roughness** |
-| `skewness`         | `float`         | Target skewness of the height distribution (ignored if `non_Gauss=False`) |
-| `kurtosis`         | `float`         | Target kurtosis of the height distribution (ignored if `non_Gauss=False`) |
-| `corlength_x`      | `float`         | Correlation length along the **x-axis** |
-| `corlength_y`      | `float`         | Correlation length along the **y-axis** |
-| `alpha`            | `float`         | **Roughness exponent** (Hurst-like exponent) |
-| `non_Gauss`        | `bool`          | `True` (default) generates the full non-Gaussian surface; `False` returns the plain Gaussian scaffold |
-| `threshold`        | `float or None` | Height used for the binarized view. Defaults to the surface's own mean if not given |
-| `corr`             | `bool`          | Whether to compute/plot the height-height correlation function |
-| `invert`           | `bool`          | Flip the surface's sign before shifting non-negative (also flips skewness — off by default) |
-| `seed`             | `int or None`   | Random seed, for reproducible surfaces |
-| `show`             | `bool`          | Call `plt.show()` or just build and return the figure(s) (useful headless) |
-| `clip_percentiles` | `(low, high) or None` | Optionally clip extreme noise values before rescaling (off by default — see note below) |
-| `plot_style`       | `'rich'`, `'classic'`, `'none'` | Which visualization to produce (see **New Features**) |
+## Plots: static or interactive, your choice
 
----
+Every `plot_*` function takes `interactive=False` (matplotlib, at most 2 panels per figure, white background) or `interactive=True` (Plotly: rotate, zoom, hover). Save either with `plots.save(fig, "name.png")` or `plots.save(fig, "name.html")`.
 
-## 📈 Output
+| Function | What it shows |
+|---|---|
+| `plot_surfaces(res)` | Gaussian scaffold vs. final surface in 3D |
+| `plot_heightmap_mask(res)` | hillshaded heightmap, binarized mask |
+| `plot_distribution(res)` | histogram + fitted Johnson PDF, Q-Q plot |
+| `plot_profile_bearing(res)` | height profile, Abbott-Firestone bearing-area curve |
+| `plot_hhcf_report(res)` | height-height correlation, requested-vs-achieved table |
+| `plot_spectrum(res)` | 2D power spectrum, radial spectrum with expected slope |
+| `plot_feasibility(points)` | Johnson (skewness, kurtosis) plane: which family your request falls in |
+| `plot_compare(a, b, labels)` | two heightmaps on a shared color scale |
+| `interactive.explorer(param, values)` | slider over skewness, kurtosis, rms or alpha |
 
-Returns a 2D NumPy array:
+Or by name: `plots.plot(res, "spectrum", interactive=True)`.
+
+Skewness changes the look of a surface: negative gives a bright plateau with deep pits, positive gives sharp peaks over a flat floor.
+
+![Skewness comparison](https://raw.githubusercontent.com/BlackPianoCat/NonGaussianSurfaces/main/mkdocs/docs/assets/img/compare_skewness.png)
+
+All plots, with more figures and interactive versions, are in the docs (`mkdocs/`): heightmaps, distributions, bearing-area curve, correlation, spectrum, Johnson feasibility map, parameter sliders.
+
+Interactive demos (open in a browser): [3D surfaces](https://htmlpreview.github.io/?https://github.com/BlackPianoCat/NonGaussianSurfaces/blob/main/mkdocs/docs/assets/interactive/surfaces.html), [skewness slider](https://htmlpreview.github.io/?https://github.com/BlackPianoCat/NonGaussianSurfaces/blob/main/mkdocs/docs/assets/interactive/explorer_skewness.html), [feasibility map](https://htmlpreview.github.io/?https://github.com/BlackPianoCat/NonGaussianSurfaces/blob/main/mkdocs/docs/assets/interactive/feasibility.html).
+
+### Statistics without plots
 
 ```python
-surface = SAimage_fft_2(...)
+from nongauss import moments, hhcf_1d, abbott_curve, radial_psd
+
+mean, std, skew, kurt = moments(res.z)
+g = hhcf_1d(res.z, axis=1)        # height-height correlation along x
+pct, h = abbott_curve(res.z)      # bearing-area curve
+k, psd = radial_psd(res.z)        # isotropic power spectrum
 ```
 
-- Height values distributed exactly as requested (mean, rms, skewness, kurtosis), or Gaussian if `non_Gauss=False`
-- Non-negative, shifted so the minimum height is 0
-- Spatial correlation matching `corlength_x`, `corlength_y`, and `alpha`
+The original entry point still works: `SAimage_fft_2(N=500, rms=3, skewness=1, kurtosis=3, seed=42, plot_style='none')` returns the height array.
 
 ---
 
-## ✨ New Features
+## API reference
 
-This version fixes a real correctness bug and adds a full visual/statistical reporting layer on top of the original port.
+`generate_surface(N=500, rms=3.0, skewness=1.0, kurtosis=3.0, corlength_x=10, corlength_y=10, alpha=0.9, non_Gauss=True, invert=False, clip_percentiles=None, seed=None)` returns a `SurfaceResult` (`z`, `z_gauss`, `coef`, `j_type`, `msg`, `requested`).
 
-### 1. Correct Johnson-type dispatch (the bug fix)
+| Parameter | Description |
+|---|---|
+| `N` | grid size (N × N pixels) |
+| `rms`, `skewness`, `kurtosis` | target height statistics (Pearson kurtosis, Gaussian = 3) |
+| `corlength_x`, `corlength_y` | correlation lengths in pixels; x runs along columns, y along rows |
+| `alpha` | roughness exponent |
+| `non_Gauss` | `False` returns the plain Gaussian surface |
+| `invert` | flip the sign before shifting to min = 0 (also flips the skewness) |
+| `clip_percentiles` | optional `(low, high)` noise clip; bounds heights but biases kurtosis down |
+| `seed` | random seed for reproducibility |
 
-The previous implementation always sampled the non-Gaussian noise with `scipy.stats.johnsonsu`, regardless of which Johnson family the moment-fit actually returned. Since the module's own defaults (`skewness=1, kurtosis=3`) fit to an **SB** (bounded) curve, not SU, this silently fed SB parameters through the SU (sinh) transform — producing a sample with skewness ≈ −29 and kurtosis ≈ 2095 instead of the requested 1 and 3. The generator now dispatches on the fitted type (`SN`, `SL`, `SB`, `SU`, or the degenerate `ST` boundary case) and samples from the correct family every time, verified to land within ~1% of the requested moments across all five types.
+Every function is documented in the mkdocs site (`mkdocs/`).
 
-### 2. Rich visualization gallery
+## How it works
 
-With `plot_style='rich'` (the default), a single combined figure is produced with:
+1. **Spatial scaffold.** A Gaussian surface with autocorrelation `R(tx, ty) = rms² · exp(−(√((tx/ξx)² + (ty/ξy)²))^(2α))` is made by filtering white noise with the square root of the FFT of `R` (Wiener-Khinchin theorem: the power spectrum is the Fourier transform of the autocorrelation).
+2. **Height distribution.** A Johnson distribution (a standard normal variable pushed through `sinh`, logistic, exponential or linear maps, types SU, SB, SL, SN) is fitted to the requested moments. The family is dictated by (skewness, kurtosis); `res.j_type` reports it. A two-point `ST` case appears on the boundary kurtosis = 1 + skewness².
+3. **Rank mapping.** The pixel with the *k*-th lowest scaffold height gets the *k*-th lowest Johnson sample. This keeps the scaffold's spatial pattern and imposes the exact height distribution. The result is shifted to min = 0.
 
-- Side-by-side **3D Gaussian vs. non-Gaussian surfaces**, same colormap for a fair visual comparison
-- A **top-down heightmap** with colorbar
-- The **binarized mask** at the chosen threshold
-- A **histogram of heights** with the fitted Johnson PDF overlaid (or, for the `ST` boundary case, the two-point probability mass shown as stems)
-- A **Q-Q plot** against that fit, annotated with the correlation coefficient
-- The **height-height correlation function** (log-log)
+Notes: the mean is not a parameter (rms, skewness and kurtosis are shift-invariant, so they remain comparable to the request). Rank mapping is not a rigorous joint model, so the final correlation function differs slightly from the scaffold's. Since v0.2 `corlength_x` acts along image columns (axis 1); before, it acted along axis 0.
 
-### 3. Statistical report card
+## Repository layout
 
-Alongside the gallery (and also printed to the console via `print_report`), a report compares **requested vs. achieved** mean, rms, skewness, and kurtosis, with percent error, plus the Johnson type that was fitted and your correlation-length/roughness settings — so you can see at a glance how faithfully the surface matches what you asked for.
-
-### 4. Configurable, less lossy noise handling
-
-- `clip_percentiles` is now **off by default** (it used to always clip to the 0.1–99.9th percentile). For heavy-tailed (SU, high-kurtosis) requests, those extreme values *are* the kurtosis — clipping them silently biased the achieved kurtosis downward. Pass `clip_percentiles=(0.1, 99.9)` yourself if you specifically need bounded heights and can accept some undershoot.
-- `invert` is now **off by default** (it used to always flip the surface's sign before shifting it positive, which silently flipped the sign of the achieved skewness relative to what was requested). Set `invert=True` if you want that mirrored convention back.
-
-### 5. Quality-of-life additions
-
-- `seed=` for reproducible surfaces
-- `show=False` to build figures without blocking / for headless & batch runs
-- `plot_style='classic'` keeps the original three separate figures if you prefer them; `plot_style='none'` skips plotting entirely
-- The autocorrelation matrix `R` is now built with vectorized NumPy instead of a pure-Python double loop — same output, noticeably faster for large `N`
-
----
-
-## 🌍 Usage
-
-```python
-import numpy as np
-from non_gaussian_surfaces import SAimage_fft_2
-
-# Full non-Gaussian surface, rich visualization + report:
-z = SAimage_fft_2(N=500, rms=3, skewness=1, kurtosis=3,
-                   corlength_x=10, corlength_y=10, alpha=0.9,
-                   seed=42, plot_style='rich')
-
-# Just the array, no plots at all (e.g. inside a batch job):
-z = SAimage_fft_2(N=500, rms=3, skewness=1.5, kurtosis=6,
-                   corlength_x=15, corlength_y=8, alpha=0.7,
-                   seed=1, show=False, plot_style='none')
-
-# Plain Gaussian surface only:
-z_gauss = SAimage_fft_2(N=256, rms=1.0, corlength_x=20, corlength_y=20,
-                          alpha=0.8, non_Gauss=False)
+```
+src/
+├── nongauss/
+│   ├── johnson.py       # moments -> Johnson parameters; scipy distributions & sampling
+│   ├── surface.py       # generation (FFT + rank mapping), statistics, reports
+│   ├── plots.py         # matplotlib figures (<=2 panels), `interactive=True` dispatch
+│   ├── interactive.py   # Plotly counterparts + parameter explorer
+│   └── cli.py           # `nongauss` command
+├── examples/make_readme_figures.py
+├── tests/               # pytest suite
+└── run_tests.py         # run the tests from a clone
+mkdocs/                  # documentation site: Home, Guide, API reference (+ figures)
+workflows/               # CI: tests + PyPI/docs publishing (move to .github/workflows/)
 ```
 
----
+## Development
 
-## ⚠️ Notes
+```bash
+pip install -e ".[dev]"
+python src/run_tests.py                      # tests
+python src/examples/make_readme_figures.py   # regenerate figures
+mkdocs serve -f mkdocs/config.yml            # preview docs
+```
 
-- Skewness and kurtosis aren't a free choice of *distribution family* — the Johnson system picks the family for you based on where your requested (skewness, kurtosis) falls. The console output and report card always tell you which type (`SN`/`SL`/`SB`/`SU`/`ST`) was used.
-- The report's **mean** row shows `n/a` for error — that's expected: the surface is deliberately shifted so its minimum height is 0, so mean isn't directly comparable to the request, while rms/skewness/kurtosis are shift-invariant and remain meaningful.
-- The rank-order mapping assumes a Gaussian-copula-like relationship between the spatial field and the target marginal — it preserves *where* the extremes are, not a rigorous joint model beyond that.
-- Spatial correlation is implemented via FFT filtering based on the **Wiener–Khinchin theorem**.
+**Releasing.** Bump `version` in `pyproject.toml`, create a GitHub release: `workflows/publish.yml` (placed in `.github/workflows/`) runs the tests, publishes to PyPI (configure a [trusted publisher](https://docs.pypi.org/trusted-publishers/) for this repo and the `pypi` environment once) and deploys the mkdocs site to GitHub Pages (enable Pages from the `gh-pages` branch once).
 
----
+## References
 
-## 📜 References
-
-- Yang, F., et al. *Statistical generation of 3D rough surfaces with arbitrary correlation*, CMES, vol. 103, no. 4, 2014.
+- Yang, F., et al. *Statistical generation of 3D rough surfaces with arbitrary correlation*, CMES 103(4), 251-279 (2014).
 - Persson, B.N.J. *Theory of rubber friction and contact mechanics*.
 - Dave (2021). *Johnson Curve Toolbox*, MATLAB Central File Exchange.
 
-## 👥 Credits
+## Credits
 
-- Python translation by Max Pierini @ [EpiData.it](https://epidata.it)
-- Ported from original MATLAB toolbox by Dave (2021)
-- Matlab code from dr. Vasilis Costantoudis
-- Extended and maintained by Sebastian Korsak
-- Johnson-type dispatch bug fix, rich visualization gallery, and statistical report card added with Claude
+- Surface generation algorithm (MATLAB): Dr. Vasilis Constantoudis
+- Johnson fitting: ported from the MATLAB Johnson Curve Toolbox by Dave (2021); Python translation by Max Pierini, [EpiData.it](https://epidata.it)
+- Python package, extensions and maintenance: Sebastian Korsak
+- Johnson-type dispatch fix, plotting suite and package restructuring: with Claude
 
----
+## License
 
-# Results
-
-![image](https://github.com/user-attachments/assets/be9a6f7b-90c5-4240-89bc-78a295d5c9bb)
-
-![image](https://github.com/user-attachments/assets/a328b67c-366d-4d67-ab96-d95e5e2e6f12)
+Apache 2.0, see `LICENSE`.

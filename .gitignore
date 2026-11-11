@@ -55,3 +55,6 @@ config_*.ini
 tmp/
 *result*/
 *output*/
+
+# docs build
+site/

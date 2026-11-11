@@ -1,4 +1,14 @@
+"""Johnson-system fitting (moments -> parameters) and scipy sampling helpers.
+
+Credits
+-------
+- Fitting algorithm: Hill, Hill & Holder (1976), AS 99, via the MATLAB "Johnson Curve
+  Toolbox" by Dave (2021), MATLAB Central File Exchange #46123.
+- Python port (sub_* routines, f_johnson_M): Max Pierini, (c) 2021 EpiData.it.
+- Sampling/dispatch helpers (johnson_dist, sample_johnson): Sebastian Korsak, with Claude.
+"""
 import numpy as np
+from scipy.stats import johnsonsu, johnsonsb, lognorm, norm
 
 
 ################################################################
@@ -485,3 +495,47 @@ def f_johnson_M(mu,sd,skew,kurt):
         msg = 'SB failure, SL or ST used instead'
 
     return coef, _type, msg
+
+# ----------------------------------------------------------------------
+# Johnson distributions in scipy
+# ----------------------------------------------------------------------
+
+
+def johnson_dist(coef, j_type):
+    """Frozen scipy distribution for Johnson params (gamma, delta, xi, lam); None for 'ST'.
+
+    With Z ~ N(0,1):
+      SU: xi + lam*sinh((Z-gamma)/delta)       SB: xi + lam/(1+exp(-(Z-gamma)/delta))
+      SL: xi + lam*exp((Z-gamma)/delta)        SN: (Z-gamma)/delta
+    """
+    gamma, delta, xi, lam = coef
+    if j_type == 'SU':
+        return johnsonsu(a=gamma, b=delta, loc=xi, scale=lam)
+    if j_type == 'SB':
+        return johnsonsb(a=gamma, b=delta, loc=xi, scale=lam)
+    if j_type == 'SL':
+        return lognorm(s=1.0 / delta, loc=xi, scale=lam * np.exp(-gamma / delta))
+    if j_type == 'SN':
+        return norm(loc=-gamma / delta, scale=1.0 / delta)
+    if j_type == 'ST':
+        return None  # degenerate two-point case, not continuous
+    raise ValueError(f'Unknown Johnson type: {j_type!r}')
+
+
+def sample_johnson(coef, j_type, size, rng=None):
+    """Draw samples from the fitted Johnson family (always dispatch on j_type)."""
+    rng = np.random.default_rng() if rng is None else rng
+    if j_type == 'ST':
+        # two-point law: P(lam) = delta, otherwise xi
+        _, p, xi, lam = coef
+        return np.where(rng.random(size) < p, lam, xi)
+    return johnson_dist(coef, j_type).rvs(size=size, random_state=rng)
+
+
+def johnson_boundaries(skew):
+    """Kurtosis limits for |skew|: (impossible-below line, lognormal SL line). Above SL -> SU, between -> SB."""
+    s = np.abs(np.asarray(skew, dtype=float))
+    x, y = 0.5 * s ** 2 + 1, s * np.sqrt(0.25 * s ** 2 + 1)
+    u = (x + y) ** (1 / 3)
+    w = u + 1 / u - 1
+    return 1 + s ** 2, w ** 2 * (3 + w * (2 + w)) - 3
