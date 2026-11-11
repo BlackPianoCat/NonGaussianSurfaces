@@ -222,7 +222,7 @@ def plot_compare(res_a, res_b, labels, cmap=CMAP):
 @styled_static
 def plot_logo(res, size=3):
     """Small square logo: hillshaded surface, no axes."""
-    fig = plt.figure(figsize=(size, size))
+    fig = plt.figure(figsize=(size, size), facecolor='none')
     ax = fig.add_axes([0, 0, 1, 1])
     ax.imshow(_shade(res.z, 'inferno', exag=3), origin='lower'); ax.axis('off')
     return fig
@@ -238,7 +238,7 @@ def plot_banner(icon, texture, text='NonGaussian-Surfaces', height=2.2):
     tp = TextPath((0, 0), text, size=1, prop=fp)
     x0, y0, x1, y1 = tp.get_extents().extents
     w = (x1 - x0) / (y1 - y0) * height * 0.62            # text width for a 0.62*height tall word
-    fig = plt.figure(figsize=(height + w + 0.5, height), facecolor='white')
+    fig = plt.figure(figsize=(height + w + 0.5, height), facecolor='none')
     ax_i = fig.add_axes([0.02 * height / fig.get_figwidth(), 0.06, height * 0.88 / fig.get_figwidth(), 0.88])
     ax_i.imshow(_shade(icon.z, 'inferno', exag=3), origin='lower'); ax_i.axis('off')
 
@@ -266,10 +266,10 @@ def plot(res, kind='surfaces', interactive=False, **kw):
     return KINDS[kind](res, interactive=interactive, **kw)
 
 
-def save(fig, path, dpi=140):
-    """Save a matplotlib figure as an image (closes it) or a Plotly figure as standalone HTML."""
+def save(fig, path, dpi=140, transparent=False):
+    """Save a matplotlib figure as an image (closes it; `transparent=True` for no background) or a Plotly figure as HTML."""
     if hasattr(fig, 'write_html'):
         fig.write_html(path, include_plotlyjs='cdn')
         return
-    fig.savefig(path, dpi=dpi, facecolor='white', bbox_inches='tight')
+    fig.savefig(path, dpi=dpi, facecolor='none' if transparent else 'white', transparent=transparent, bbox_inches='tight')
     plt.close(fig)
